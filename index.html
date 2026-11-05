@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+    <title>Ping Me</title>
+    <link rel="apple-touch-icon" href="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg: #1b1720;
+            --btn: #e0698a;
+            --btn-pressed: #c4546f;
+            --btn-sent: #f4e9ee;
+            --btn-sent-text: #3a1f2b;
+            --error: #ffb4a8;
+            --text: #fff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            height: 100vh;
+            height: 100dvh;
+            margin: 0;
+            padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+            background: var(--bg);
+            font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button {
+            position: relative;
+            width: 85%;
+            max-width: 420px;
+            min-height: 84px;
+            padding: 24px;
+            font: inherit;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text);
+            background: var(--btn);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: transform 0.1s, background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        button:active { transform: scale(0.95); background: var(--btn-pressed); }
+        button:focus-visible { outline: 3px solid var(--btn-sent); outline-offset: 3px; }
+
+        /* Sending: dimmed while the request is in flight */
+        button.sending { opacity: 0.6; pointer-events: none; }
+
+        /* Sent: the button inverts to a light fill with a check mark */
+        button.sent {
+            background: var(--btn-sent);
+            color: var(--btn-sent-text);
+            pointer-events: none;
+            animation: pop 0.35s ease-out;
+        }
+        button.sent::before {
+            content: "\2713";
+            margin-right: 10px;
+            font-weight: 700;
+        }
+
+        /* Failed: outlined so it reads differently from a normal button */
+        button.failed {
+            background: transparent;
+            color: var(--error);
+            border-color: var(--error);
+            font-size: 20px;
+        }
+
+        @keyframes pop {
+            0%   { transform: scale(0.94); }
+            60%  { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            button.sent { animation: none; }
+        }
+    </style>
+</head>
+<body>
+    <button type="button" data-msg="I need you">I need you</button>
+    <button type="button" data-msg="I miss you">I miss you</button>
+    <button type="button" data-msg="I was just thinking about you">Thinking of you</button>
+
+    <script>
+        const URL = 'https://ntfy.sh/ping_serena_kang_2006';
+
+        document.querySelectorAll('button').forEach(btn => {
+            const label = btn.textContent;
+            let timer;
+
+            btn.addEventListener('click', async () => {
+                clearTimeout(timer);
+                btn.className = 'sending';
+                btn.textContent = 'Sending\u2026';
+
+                try {
+                    const res = await fetch(URL, { method: 'POST', body: btn.dataset.msg });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                    btn.className = 'sent';
+                    btn.textContent = 'Sent';
+                    if (navigator.vibrate) navigator.vibrate(60);
+                    timer = setTimeout(reset, 2500);
+                } catch (err) {
+                    btn.className = 'failed';
+                    btn.textContent = 'Not sent \u2013 tap to retry';
+                    if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+                    timer = setTimeout(reset, 4000);
+                }
+            });
+
+            function reset() {
+                btn.className = '';
+                btn.textContent = label;
+            }
+        });
+    </script>
+</body>
+</html>
